@@ -1,7 +1,8 @@
 # BMS Pace - Python data retrieval
 Pace Battery Management System. 
 
-This software uses the BMS frontend of https://github.com/Tertiush/bmspace 
+This software uses the BMS frontend of https://github.com/Tertiush/bmspace and prints BMS data to the console. 
+
 Features:
 * Cell voltages
 * Temperatures
