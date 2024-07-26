@@ -481,7 +481,8 @@ def bms_getAnalogData(bms,batNumber):
     try:
 
         packs = int(inc_data[byte_index:byte_index+2],16)
-        print("Packs: " + str(packs))
+        if debug_output > 0:
+            print("Packs: " + str(packs))
         byte_index += 2
 
         v_cell = {}
@@ -502,8 +503,8 @@ def bms_getAnalogData(bms,batNumber):
                     if cells != cells_prev:
                         print("Error parsing BMS analog data: Cannot read multiple packs")
                         return(False,"Error parsing BMS analog data: Cannot read multiple packs")
-
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", Total cells: " + str(cells))
+            if debug_output > 0:
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", Total cells: " + str(cells))
             byte_index += 2
             
             cell_min_volt = 0
@@ -519,7 +520,8 @@ def bms_getAnalogData(bms,batNumber):
 
                 byte_index += 4
                
-                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) +", V Cell" + str(i+1).zfill(config['zero_pad_number_cells']) + ": " + str(v_cell[(p-1,i)]) + " mV")
+                if debug_output > 0:
+                    print("Pack " + str(p).zfill(config['zero_pad_number_packs']) +", V Cell" + str(i+1).zfill(config['zero_pad_number_cells']) + ": " + str(v_cell[(p-1,i)]) + " mV")
 
                 #Calculate cell max and min volt
                 if i == 0:
@@ -534,18 +536,20 @@ def bms_getAnalogData(bms,batNumber):
             #Calculate cells max diff volt
             cell_max_diff_volt = cell_max_volt - cell_min_volt
             
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) +", Cell Max Diff Volt Calc: " + str(cell_max_diff_volt) + " mV")
+            if debug_output > 0:
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) +", Cell Max Diff Volt Calc: " + str(cell_max_diff_volt) + " mV")
 
             temps = int(inc_data[byte_index:byte_index + 2],16)
 
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", Total temperature sensors: " + str(temps))
+            if debug_output > 0:
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", Total temperature sensors: " + str(temps))
             byte_index += 2
 
             for i in range(0,temps): #temps-2
                 t_cell[(p-1,i)] = (int(inc_data[byte_index:byte_index + 4],16)-2730)/10
                 byte_index += 4
-
-                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", Temp" + str(i+1) + ": " + str(round(t_cell[(p-1,i)],1)) + " °C")
+                if debug_output > 0:
+                    print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", Temp" + str(i+1) + ": " + str(round(t_cell[(p-1,i)],1)) + " °C")
 
             # t_mos= (int(inc_data[byte_index:byte_index+4],16))/160-273
             # # client.publish(config['mqtt_base_topic'] + "/t_mos",str(round(t_mos,1)))
@@ -564,46 +568,54 @@ def bms_getAnalogData(bms,batNumber):
                 i_pack[p-1] = -1*(65535 - i_pack[p-1])
             i_pack[p-1] = i_pack[p-1]/100
 
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", I Pack: " + str(i_pack[p-1]) + " A")
+            if debug_output > 0:
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", I Pack: " + str(i_pack[p-1]) + " A")
 
             v_pack.append(int(inc_data[byte_index:byte_index+4],16)/1000)
             byte_index += 4
 
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", V Pack: " + str(v_pack[p-1]) + " V")
+            if debug_output > 0:
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", V Pack: " + str(v_pack[p-1]) + " V")
 
             i_remain_cap.append(int(inc_data[byte_index:byte_index+4],16)*10)
             byte_index += 4
 
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", I Remaining Capacity: " + str(i_remain_cap[p-1]) + " mAh")
+            if debug_output > 0:
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", I Remaining Capacity: " + str(i_remain_cap[p-1]) + " mAh")
 
             byte_index += 2 # Manual: Define number P = 3
 
             i_full_cap.append(int(inc_data[byte_index:byte_index+4],16)*10)
             byte_index += 4
 
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", I Full Capacity: " + str(i_full_cap[p-1]) + " mAh")
+            if debug_output > 0:
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", I Full Capacity: " + str(i_full_cap[p-1]) + " mAh")
 
             try:
                 soc.append(round(i_remain_cap[p-1]/i_full_cap[p-1]*100,2))
 
-                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", SOC: " + str(soc[p-1]) + " %")
+                if debug_output > 0:
+                    print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", SOC: " + str(soc[p-1]) + " %")
             except Exception as e:
                 print("Error parsing BMS analog data, missing pack"  + str(p).zfill(config['zero_pad_number_packs']) + " full capacity: ", str(e))
 
             cycles.append(int(inc_data[byte_index:byte_index+4],16))
             byte_index += 4
 
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", Cycles: " + str(cycles[p-1]))
+            if debug_output > 0:
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", Cycles: " + str(cycles[p-1]))
 
             i_design_cap.append(int(inc_data[byte_index:byte_index+4],16)*10)
             byte_index += 4
 
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", Design Capacity: " + str(i_design_cap[p-1]) + " mAh")
+            if debug_output > 0:
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", Design Capacity: " + str(i_design_cap[p-1]) + " mAh")
 
             try:
                 soh.append(round(i_full_cap[p-1]/i_design_cap[p-1]*100,2))
 
-                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", SOH: " + str(soh[p-1]) + " %")
+                if debug_output > 0:
+                    print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", SOH: " + str(soh[p-1]) + " %")
             except Exception as e:
                 print("Error parsing BMS analog data, missing pack"  + str(p).zfill(config['zero_pad_number_packs']) + " design capacity: ", str(e))
 
@@ -643,21 +655,26 @@ def bms_getPackCapacity(bms):
 
         pack_remain_cap = int(inc_data[byte_index:byte_index+4],16)*10
         byte_index += 4
-        print("Pack Remaining Capacity: " + str(pack_remain_cap) + " mAh")
+        if debug_output > 0:
+            print("Pack Remaining Capacity: " + str(pack_remain_cap) + " mAh")
 
         pack_full_cap = int(inc_data[byte_index:byte_index+4],16)*10
         byte_index += 4
-        print("Pack Full Capacity: " + str(pack_full_cap) + " mAh")
+        if debug_output > 0:
+            print("Pack Full Capacity: " + str(pack_full_cap) + " mAh")
 
         pack_design_cap = int(inc_data[byte_index:byte_index+4],16)*10
         byte_index += 4
-        print("Pack Design Capacity: " + str(pack_design_cap) + " mAh")
+        if debug_output > 0:
+            print("Pack Design Capacity: " + str(pack_design_cap) + " mAh")
 
         pack_soc = round(pack_remain_cap/pack_full_cap*100,2)
-        print("Pack SOC: " + str(pack_soc) + " %")
+        if debug_output > 0:
+            print("Pack SOC: " + str(pack_soc) + " %")
 
         pack_soh = round(pack_full_cap/pack_design_cap*100,2)
-        print("Pack SOH: " + str(pack_soh) + " %")
+        if debug_output > 0:
+            print("Pack SOH: " + str(pack_soh) + " %")
 
     except Exception as e:
         print("Error parsing BMS pack capacity data: ", str(e))
@@ -782,7 +799,8 @@ def bms_getWarnInfo(bms):
     try:
 
         packsW = int(inc_data[byte_index:byte_index+2],16)
-        print("Packs for warnings: " + str(packs))
+        if debug_output > 0:
+            print("Packs for warnings: " + str(packs))
         byte_index += 2
 
         for p in range(1,packs+1):
@@ -857,13 +875,14 @@ def bms_getWarnInfo(bms):
             # "instruction state" shall be printed separately
             # added in fork https://github.com/jpgnz/bmspace
             instructionState = ord(bytes.fromhex(inc_data[byte_index:byte_index+2].decode('ascii')))
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", current_limit: " + str(instructionState>>0 & 1))
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", charge_fet: " + str(instructionState>>1 & 1))
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", discharge_fet: " + str(instructionState>>2 & 1))
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", pack_indicate: " + str(instructionState>>3 & 1))
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", reverse: " + str(instructionState>>4 & 1))
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", ac_in: " + str(instructionState>>5 & 1))
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", heart: " + str(instructionState>>7 & 1))
+            if debug_output > 0:
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", current_limit: " + str(instructionState>>0 & 1))
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", charge_fet: " + str(instructionState>>1 & 1))
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", discharge_fet: " + str(instructionState>>2 & 1))
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", pack_indicate: " + str(instructionState>>3 & 1))
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", reverse: " + str(instructionState>>4 & 1))
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", ac_in: " + str(instructionState>>5 & 1))
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", heart: " + str(instructionState>>7 & 1))
             byte_index += 2
 
 
@@ -915,9 +934,10 @@ def bms_getWarnInfo(bms):
 
             warnings = warnings.rstrip(", ")
 
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", warnings: " + warnings)
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", balancing1: " + balanceState1)
-            print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", balancing2: " + balanceState2)
+            if debug_output > 0:
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", warnings: " + warnings)
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", balancing1: " + balanceState1)
+                print("Pack " + str(p).zfill(config['zero_pad_number_packs']) + ", balancing2: " + balanceState2)
 
             warnings = ""
 
