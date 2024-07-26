@@ -1,8 +1,8 @@
 name: "BMS Pace - Development"
 description: "Pace BMS Interface"
-version: "2.3dev"
+version: "0.1dev"
 slug: "bms_pace_dev"
-url: "https://github.com/Tertiush/bmspace/pace-bms-dev"
+url: "https://github.com/simons1008/bmspace"
 init: false
 arch:
   - aarch64
@@ -15,13 +15,6 @@ uart: true
 usb: true
 
 options:
-  mqtt_host: "10.0.0.132"
-  mqtt_port: 1883
-  mqtt_user: "mqtt-users"
-  mqtt_password: "mqtt-users"
-  mqtt_ha_discovery: true
-  mqtt_ha_discovery_topic: "homeassistant"
-  mqtt_base_topic: "bmspace"
   connection_type: "Serial"
   bms_ip: "10.0.0.161"
   bms_port: 5000
@@ -32,13 +25,6 @@ options:
   zero_pad_number_cells: 0
   zero_pad_number_packs: 0
 schema:
-  mqtt_host: str
-  mqtt_port: int
-  mqtt_user: str
-  mqtt_password: str
-  mqtt_ha_discovery: bool
-  mqtt_ha_discovery_topic: str
-  mqtt_base_topic: str
   connection_type: list(IP|Serial)
   bms_ip: str
   bms_port: int
