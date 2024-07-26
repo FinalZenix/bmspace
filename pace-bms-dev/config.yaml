@@ -22,10 +22,10 @@ options:
   mqtt_ha_discovery: true
   mqtt_ha_discovery_topic: "homeassistant"
   mqtt_base_topic: "bmspace"
-  connection_type: "IP"
+  connection_type: "Serial"
   bms_ip: "10.0.0.161"
   bms_port: 5000
-  bms_serial: "/dev/ttyUSB0"
+  bms_serial: "com3"
   scan_interval: 5
   debug_output: 0
   force_pack_offset: 0

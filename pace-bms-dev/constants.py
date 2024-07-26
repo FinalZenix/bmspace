@@ -45,7 +45,7 @@ controlState =     {1: "Buzzer warn function enabled",
                     3: "undefined",
                     4: "Current limit gear => low gear",
                     5: "Current limit function disabled",
-                    6: "LED warn functiuon disabled",
+                    6: "LED warn function disabled",
                     7: "Undefined",
                     8: "Undefined"}
 
