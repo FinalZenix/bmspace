@@ -11,6 +11,7 @@ import serial
 import io
 import sys
 import constants
+import telemetry
 import datetime
 
 # start message
