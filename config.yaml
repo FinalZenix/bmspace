@@ -20,7 +20,7 @@ options:
   bms_port: 5000
   bms_serial: "/dev/ttyUSB0"
   scan_interval: 5
-  debug_output: 1
+  debug_output: 0
   force_pack_offset: 0
   zero_pad_number_cells: 0
   zero_pad_number_packs: 0

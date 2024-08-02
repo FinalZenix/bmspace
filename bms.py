@@ -663,45 +663,46 @@ def bms_getAnalogData(bms,batNumber):
 # - pack remain capacity
 # - pack full capacity
 # - pack design capacity
-# def bms_getPackCapacity(bms):
-# 
-#     byte_index = 0
-# 
-#     success, inc_data = bms_request(bms,cid2=constants.cid2PackCapacity) # Seem to always reply with pack 1 data, even with ADR= 0 or FF and INFO= '' or FF
-# 
-#     if success == False:
-#         return(False,inc_data)
-# 
-#     try:
-# 
-#         pack_remain_cap = int(inc_data[byte_index:byte_index+4],16)*10
-#         byte_index += 4
-#         if debug_output > 0:
-#             print("Pack Remaining Capacity: " + str(pack_remain_cap) + " mAh")
-# 
-#         pack_full_cap = int(inc_data[byte_index:byte_index+4],16)*10
-#         byte_index += 4
-#         if debug_output > 0:
-#             print("Pack Full Capacity: " + str(pack_full_cap) + " mAh")
-# 
-#         pack_design_cap = int(inc_data[byte_index:byte_index+4],16)*10
-#         byte_index += 4
-#         if debug_output > 0:
-#             print("Pack Design Capacity: " + str(pack_design_cap) + " mAh")
-# 
-#         pack_soc = round(pack_remain_cap/pack_full_cap*100,2)
-#         if debug_output > 0:
-#             print("Pack SOC: " + str(pack_soc) + " %")
-# 
-#         pack_soh = round(pack_full_cap/pack_design_cap*100,2)
-#         if debug_output > 0:
-#             print("Pack SOH: " + str(pack_soh) + " %")
-# 
-#     except Exception as e:
-#         print("Error parsing BMS pack capacity data: ", str(e))
-#         return False, "Error parsing BMS pack capacity data: " + str(e)
-# 
-#     return True,True
+# not included in telemetry
+def bms_getPackCapacity(bms):
+
+    byte_index = 0
+
+    success, inc_data = bms_request(bms,cid2=constants.cid2PackCapacity) # Seem to always reply with pack 1 data, even with ADR= 0 or FF and INFO= '' or FF
+
+    if success == False:
+        return(False,inc_data)
+
+    try:
+
+        pack_remain_cap = int(inc_data[byte_index:byte_index+4],16)*10
+        byte_index += 4
+        if debug_output > 0:
+            print("Pack Remaining Capacity: " + str(pack_remain_cap) + " mAh")
+
+        pack_full_cap = int(inc_data[byte_index:byte_index+4],16)*10
+        byte_index += 4
+        if debug_output > 0:
+            print("Pack Full Capacity: " + str(pack_full_cap) + " mAh")
+
+        pack_design_cap = int(inc_data[byte_index:byte_index+4],16)*10
+        byte_index += 4
+        if debug_output > 0:
+            print("Pack Design Capacity: " + str(pack_design_cap) + " mAh")
+
+        pack_soc = round(pack_remain_cap/pack_full_cap*100,2)
+        if debug_output > 0:
+            print("Pack SOC: " + str(pack_soc) + " %")
+
+        pack_soh = round(pack_full_cap/pack_design_cap*100,2)
+        if debug_output > 0:
+            print("Pack SOH: " + str(pack_soh) + " %")
+
+    except Exception as e:
+        print("Error parsing BMS pack capacity data: ", str(e))
+        return False, "Error parsing BMS pack capacity data: " + str(e)
+
+    return True,True
 
 # function requests "pack warn info" from BMS
 def bms_getWarnInfo(bms):
@@ -1007,19 +1008,17 @@ try:
             success, data = bms_getAnalogData(bms,batNumber=255)
             if success != True:
                 print("Error retrieving BMS analog data: " + data)
-            time.sleep(scan_interval/2)
-            # tested with only 1 BMS => PackCapacity not relevant
-#             success, data = bms_getPackCapacity(bms)
-#             if success != True:
-#                 print("Error retrieving BMS pack capacity: " + data)
-#             time.sleep(scan_interval/3)
+            time.sleep(scan_interval/3)
+            success, data = bms_getPackCapacity(bms)
+            if success != True:
+                print("Error retrieving BMS pack capacity: " + data)
+            time.sleep(scan_interval/3)
             success, data = bms_getWarnInfo(bms)
             if success != True:
                 print("Error retrieving BMS warning info: " + data)
             # telemetry dictionary
-            if debug_output > 0:
-                print("telemetry = ", telemetry_module.telemetry)
-            time.sleep(scan_interval/2)
+            print(telemetry_module.telemetry)
+            time.sleep(scan_interval/3)
         else: #BMS not connected
             print("BMS disconnected, trying to reconnect...")
             bms,bms_connected = bms_connect(config['bms_ip'],config['bms_port'])
