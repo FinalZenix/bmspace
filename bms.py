@@ -13,6 +13,7 @@ import io
 import sys
 import constants
 import telemetry_module
+import server_module
 import datetime
 
 # start message
@@ -1000,6 +1001,13 @@ if success != True:
     print("Error retrieving BMS and pack serial numbers. Exiting...")
     quit()
 
+# message to console
+# print network attributes
+attributes = server_module.get_network_attributes()
+
+# connect to TB Server
+server_module.TB_server_connect()
+
 # Loop
 try:
     while True:
@@ -1018,6 +1026,8 @@ try:
                 print("Error retrieving BMS warning info: " + data)
             # telemetry dictionary
             print(telemetry_module.telemetry)
+            # send telemetry to TB Server
+            server_module.client.send_telemetry(telemetry_module.telemetry)
             time.sleep(scan_interval/3)
         else: #BMS not connected
             print("BMS disconnected, trying to reconnect...")
@@ -1025,6 +1035,7 @@ try:
             time.sleep(5)
 except KeyboardInterrupt:
     print("\nProgram terminated by user.")
-
+    server_module.client.disconnect()
+ 
 # end of program
 print("END: " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
