@@ -3,6 +3,7 @@
 # - die Funktion zum Setzen der BMS Telemetrie-Daten
 
 telemetry = {
+    "alive": False,
     "analog_data_packs": 0,
     "total_cells": 0,
     "v_cell_1": 0,

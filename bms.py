@@ -45,6 +45,9 @@ packs = 1
 cells = 13
 temps = 6
 
+# alive variable
+alive = False
+
 # connection type message
 print("Connection Type: " + connection_type)
 
@@ -1027,7 +1030,10 @@ try:
             # telemetry dictionary
             print(telemetry_module.telemetry)
             # send telemetry to TB Server
+            alive = not alive
+            telemetry_module.set_telemetry("alive", alive)
             server_module.client.send_telemetry(telemetry_module.telemetry)
+            # toggle alive variable
             time.sleep(scan_interval/3)
         else: #BMS not connected
             print("BMS disconnected, trying to reconnect...")
