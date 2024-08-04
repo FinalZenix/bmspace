@@ -13,17 +13,20 @@
 import time
 import server_module
 
+# globale Variale
+alive = False
 
 def main():
+    global alive
     server_module.TB_server_connect()
       
     try: 
         while not server_module.client.stopped:
-            attributes, telemetry = server_module.get_data()
+            attributes = server_module.get_network_attributes()
             server_module.client.send_attributes(attributes)
-            server_module.client.send_telemetry(telemetry)
+            server_module.client.send_telemetry({"alive": alive})
             time.sleep(5)
-            server_module.alive = not server_module.alive
+            alive = not alive
     except KeyboardInterrupt:
         print("Program terminated by user")
         server_module.client.disconnect()

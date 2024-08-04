@@ -12,9 +12,8 @@ THINGSBOARD_SERVER = 'thingsboard.cloud'
 
 logging.basicConfig(level=logging.DEBUG)
     
-# globale Variablen
+# globale Variable
 client = None
-alive = False
 
 # Funktion zum Verbinden mit dem TB Server
 def TB_server_connect():
@@ -23,7 +22,7 @@ def TB_server_connect():
     client.connect()    
 
 # Funktion zum Einlesen der Daten
-def get_data():
+def get_network_attributes():
     ip_address = os.popen('''hostname -I''').readline().replace('\n', '').replace(',', '.')[:-1]
     mac_address = os.popen('''cat /sys/class/net/*/address''').readline().replace('\n', '').replace(',', '.')
    
@@ -31,8 +30,6 @@ def get_data():
         'ip_address': ip_address,
         'macaddress': mac_address
     }
-    telemetry = {
-        'alive': alive
-    }
-    print(attributes, telemetry)
-    return attributes, telemetry
+
+    print(attributes)
+    return attributes
