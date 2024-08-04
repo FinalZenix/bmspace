@@ -1,3 +1,7 @@
+# Inhalt des Moduls:
+# - das Dictionary mit den BMS Telemetrie-Daten
+# - die Funktion zum Setzen der BMS Telemetrie-Daten
+
 telemetry = {
     "analog_data_packs": 0,
     "total_cells": 0,
