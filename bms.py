@@ -1,9 +1,3 @@
-# Program reads BMS data and sends telemetry to thingsboard.cloud
-# telemetry_module.telemetry stores data from only 1 BMS device 
-# Tested with 1 BMS device: 
-# - Liontron LiFePO4 Speicher: LX48-100 - 48V 100Ah 
-# - BMS: PACE P16S120A-14530-2.01
-
 # import libraries
 import time
 import yaml
@@ -15,9 +9,20 @@ import constants
 import telemetry_module
 import server_module
 import datetime
-
+import logging
+import threading
+#import random # FOR DEBUGGING PURPOSES ONLY
 # start message
 print("START: " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+# Set up logging
+logging.basicConfig(filename='logfile.log')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 # read config
 config = {}
@@ -47,9 +52,9 @@ temps = 6
 
 # alive variable
 alive = False
-
-# connection type message
-print("Connection Type: " + connection_type)
+# Initialize variables for multithreading
+bms_connected = False
+alive = False
 
 # lists for telemetry assignment
 v_cell_key = ["v_cell_1", "v_cell_2", "v_cell_3", "v_cell_4", "v_cell_5", "v_cell_6", "v_cell_7", "v_cell_8",
@@ -528,7 +533,7 @@ def bms_getAnalogData(bms,batNumber):
                 telemetry_module.set_telemetry(v_cell_key[i], v_cell[(p-1,i)]) # telemetry
 
                 #Adding this because otherwise weird stuff happens
-                # added in fork https://github.com/jpgnz/bmspace
+                #added in fork https://github.com/jpgnz/bmspace
                 if v_cell[(p-1, i)] > 5000:
                     sys.exit("Exiting script because the value is greater than 5000")
 
@@ -989,60 +994,93 @@ def bms_getWarnInfo(bms):
 
     return True,True
 
-# message to console
-# print BMS software version and serial number only once
-print("Connecting to BMS...")
-bms,bms_connected = bms_connect(config['bms_ip'],config['bms_port'])
+'''
+DEBUG CODE. PLEASE DO NOT USE ON PRODUCTION.
 
-success, data = bms_getVersion(bms)
-if success != True:
-    print("Error retrieving BMS version number")
+def random_data_debug():
+    for i in range(0,cells):
+        telemetry_module.set_telemetry(v_cell_key[i], random.randint(0,1873629))
 
-time.sleep(0.1)
-success, bms_sn,pack_sn = bms_getSerial(bms)
+    return (True, "***DebugMode***");
+'''
 
-if success != True:
-    print("Error retrieving BMS and pack serial numbers. Exiting...")
-    quit()
+# Function for BMS data collection
+def bms_data_collection():
+    global bms_connected, alive
+    bms, bms_connected = bms_connect(config['bms_ip'], config['bms_port'])
 
-# message to console
-# print network attributes
-attributes = server_module.get_network_attributes()
-
-# connect to TB Server
-server_module.TB_server_connect()
-
-# Loop
-try:
     while True:
-        if bms_connected == True:
+        if bms_connected:
+            try:
+                # Collect BMS data
+                success, data = bms_getAnalogData(bms, batNumber=255)
+                if not success:
+                    logger.error(f"Error retrieving BMS analog data: {data}")
 
-            success, data = bms_getAnalogData(bms,batNumber=255)
-            if success != True:
-                print("Error retrieving BMS analog data: " + data)
-            time.sleep(scan_interval/3)
-            success, data = bms_getPackCapacity(bms)
-            if success != True:
-                print("Error retrieving BMS pack capacity: " + data)
-            time.sleep(scan_interval/3)
-            success, data = bms_getWarnInfo(bms)
-            if success != True:
-                print("Error retrieving BMS warning info: " + data)
-            # telemetry dictionary
-            print(telemetry_module.telemetry)
-            # send telemetry to TB Server
-            alive = not alive
-            telemetry_module.set_telemetry("alive", alive)
-            server_module.client.send_telemetry(telemetry_module.telemetry)
-            # toggle alive variable
-            time.sleep(scan_interval/3)
-        else: #BMS not connected
-            print("BMS disconnected, trying to reconnect...")
-            bms,bms_connected = bms_connect(config['bms_ip'],config['bms_port'])
+                time.sleep(scan_interval / 3)
+                
+                success, data = bms_getPackCapacity(bms)
+                if not success:
+                    logger.error(f"Error retrieving BMS pack capacity: {data}")
+
+                time.sleep(scan_interval / 3)
+                
+                success, data = bms_getWarnInfo(bms)
+                if not success:
+                    logger.error(f"Error retrieving BMS warning info: {data}")
+                
+                # Prepare telemetry data
+                alive = not alive
+                telemetry_module.set_telemetry("alive", alive)
+                
+                #print(f"Telemetry prepared: {telemetry_module.telemetry}")
+                time.sleep(scan_interval / 3)
+
+            except Exception as e:
+                logger.error(f"Error during BMS data collection: {e}")
+                bms_connected = False  # Mark as disconnected to trigger reconnection
+
+        else:
+            # Attempt to reconnect
+            logger.info("BMS disconnected, trying to reconnect...")
+            bms, bms_connected = bms_connect(config['bms_ip'], config['bms_port'])
             time.sleep(5)
-except KeyboardInterrupt:
-    print("\nProgram terminated by user.")
-    server_module.client.disconnect()
- 
-# end of program
-print("END: " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+# Function for ThingsBoard server communication
+def tb_communication():
+    server_module.TB_server_connect()
+
+    while True:
+        try:
+            if telemetry_module.telemetry:
+                server_module.send_telemetry(telemetry_module.telemetry)
+
+            time.sleep(scan_interval)  # Send data at intervals
+
+        except Exception as e:
+            logger.error(f"Error in ThingsBoard communication: {e}")
+            logger.info("Reconnecting to Thingsboard server due to communication error.")
+            server_module.TB_server_connect()
+            time.sleep(5)  # Short delay before retrying
+
+if __name__ == "__main__":
+    # Start BMS data collection thread
+    bms_thread = threading.Thread(target=bms_data_collection, daemon=True)
+    bms_thread.start()
+
+    # Start ThingsBoard communication thread
+    tb_thread = threading.Thread(target=tb_communication, daemon=True)
+    tb_thread.start()
+
+    # Keep the main thread alive to listen for interrupts
+    try:
+        while True:
+            time.sleep(1)  # Keep main thread alive
+
+    except KeyboardInterrupt:
+        logger.info("Program terminated by user.")
+    finally:
+        server_module.cleanup()  # Ensure the ThingsBoard connection is properly closed
+        logger.info("Program ended.")
+        print("END: " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
